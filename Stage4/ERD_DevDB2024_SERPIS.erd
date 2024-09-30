@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<diagram version="1" name="ERD_DevDB2024_SERPIS.erd">
+	<entities>
+		<data-source id="postgres-jdbc-1922f9a74f8-472bd5efb6686ee2">
+			<entity id="1" name="Vehicle" fq-name="&quot;Cars&quot;.&quot;Vehicle&quot;" order="0" x="750" y="63">
+				<path name="Cars"/>
+				<path name="DevDB2024_SERPIS"/>
+			</entity>
+			<entity id="2" name="Vehicle_type" fq-name="&quot;Cars&quot;.&quot;Vehicle_type&quot;" order="1" x="980" y="63">
+				<path name="Cars"/>
+				<path name="DevDB2024_SERPIS"/>
+			</entity>
+			<entity id="3" name="Passenger" fq-name="&quot;Clients&quot;.&quot;Passenger&quot;" order="2" color-bg="204,192,184" x="139" y="64">
+				<path name="Clients"/>
+				<path name="DevDB2024_SERPIS"/>
+			</entity>
+			<entity id="4" name="Ticket" fq-name="&quot;Clients&quot;.&quot;Ticket&quot;" order="3" color-bg="204,192,184" border-width="3" x="343" y="62">
+				<path name="Clients"/>
+				<path name="DevDB2024_SERPIS"/>
+			</entity>
+			<entity id="5" name="Driver" fq-name="&quot;Operations&quot;.&quot;Driver&quot;" order="4" color-bg="228,255,181" x="503" y="334">
+				<path name="Operations"/>
+				<path name="DevDB2024_SERPIS"/>
+			</entity>
+			<entity id="6" name="Route" fq-name="&quot;Operations&quot;.&quot;Route&quot;" order="5" color-bg="228,255,181" x="343" y="235">
+				<path name="Operations"/>
+				<path name="DevDB2024_SERPIS"/>
+			</entity>
+			<entity id="7" name="Schedule" fq-name="&quot;Operations&quot;.&quot;Schedule&quot;" order="6" color-bg="228,255,181" x="541" y="61">
+				<path name="Operations"/>
+				<path name="DevDB2024_SERPIS"/>
+			</entity>
+		</data-source>
+	</entities>
+	<relations>
+		<relation name="fk_vehicle" fq-name="&quot;Operations&quot;.&quot;Schedule&quot;.fk_vehicle" type="fk" pk-ref="1" fk-ref="7"/>
+		<relation name="fk_type_vehicle" fq-name="&quot;Cars&quot;.&quot;Vehicle&quot;.fk_type_vehicle" type="fk" pk-ref="2" fk-ref="1"/>
+		<relation name="fk_pass" fq-name="&quot;Clients&quot;.&quot;Ticket&quot;.fk_pass" type="fk" pk-ref="3" fk-ref="4"/>
+		<relation name="fk_driver" fq-name="&quot;Operations&quot;.&quot;Schedule&quot;.fk_driver" type="fk" pk-ref="5" fk-ref="7"/>
+		<relation name="fk_route" fq-name="&quot;Operations&quot;.&quot;Schedule&quot;.fk_route" type="fk" pk-ref="6" fk-ref="7"/>
+		<relation name="fk_schedule" fq-name="&quot;Clients&quot;.&quot;Ticket&quot;.fk_schedule" type="fk" pk-ref="7" fk-ref="4"/>
+	</relations>
+</diagram>
