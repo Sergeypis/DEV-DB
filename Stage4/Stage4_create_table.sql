@@ -1,8 +1,17 @@
+-- Практическая работа 4--
+
+-- 1. Создайте БД с именем DevDB2024_<ваша учетка>
 create database "DevDB2024_SERPIS"
 	with 
 		owner = pguser
 		connection limit = -1;
-	
+
+-- 2. Реализуйте таблицы для хранения требуемых данных
+--Определите в таблицах все необходимые ограничения целостности:
+--Первичные ключи и альтернативные ключи
+--Внешние ключи
+--Ограничения CHECK и DEFAULT
+
 CREATE SCHEMA "Operations";
 CREATE SCHEMA "Cars";
 CREATE SCHEMA "Clients";
@@ -154,6 +163,11 @@ create table if not exists 	"Clients"."Ticket"
 alter table "Clients"."Ticket"
 add constraint AK_cl_ticket2 unique (schedule_id, place_number);
 
+-- Реализуйте 2 представления, которые позволят получать из вашей БД основную информацию, 
+--соответствующую предметной области. Например: Список пассажиров на предстоящие поездки. 
+--Представление должно возвращать пункт отправления, пункт назначения, модель 
+--и регистрационный номер транспортного средства, ФИО водителя, ФИО пассажира, № места пассажира.
+
 create view "Operations"."Long_routs_view"
 as select 
 	depart,
@@ -181,7 +195,10 @@ from
 where os.date_depart >= now();
  
 
---Лабораторная работа №5
+--Лабораторная работа №5--
+
+--Задание 1. Модификация данных в БД
+--1.	Используя оператор INSERT …VALUES вставьте в таблицы вашей БД по 2 записи (с учетом ограничений целостности)
 
 insert into "Cars"."Vehicle_type"
 	("type", "max_allowed_speed")
@@ -230,26 +247,38 @@ values
 	
 insert into "Clients"."Passenger"
 	(
-	lastname,
-	firstname,
-	patronymic,
-	passport,
-	birthday
+	lastname,firstname,patronymic,passport,birthday
 	)
 values
 	(
-	'Захаров',
-	'Захар',
-	'Захарович',
-	'55 66 777888',
-	'2010-02-03'
+	'Захаров','Захар','Захарович','55 66 777888','2010-02-03'
 	),
 	(
-	'Smith',
-	'John',
-	'',
-	'00 20 200200',
-	'2000-08-30'
+	'Smith','John','','00 20 200200','2000-08-30'
+	),
+	(
+	'Прохоров','Валерий','Сергеевич','66 66 777888','1983-04-03'
+	),
+	(
+	'Бойко','Алексей','Валерьевич','33 44 567987','1985-07-10'
+	),
+	(
+	'Хиврич','Денис','Валерьевич','45 43 123456','1982-08-13'
+	),
+	(
+	'Безруков','Евгений','Игоревич','76 41 111987','1982-07-15'
+	),
+	(
+	'Безрукова','Елена','Владимировна','12 43 922716','1986-11-23'
+	),
+	(
+	'Воротыло','Александр','Григорьевич','41 07 656243','1959-08-03'
+	),
+	(
+	'Шубин','Андрей','Владимирович','40 07 097856','1981-12-27'
+	),
+	(
+	'Глинина','Ирина','Андреевна','45 02 450888','1975-02-18'
 	);
 	
 insert into "Operations"."Schedule"	
@@ -272,7 +301,7 @@ values
 	(select vin from "Cars"."Vehicle" where number_plate = 'В123ВВ750RUS'),
 	'2024-10-15'::date,
 	'16:30'::time,
-	(select driver_id from "Operations"."Driver" where lastname = 'Петров' and firstname = 'Петр' and drivers_license_category = 'B'),
+	(select driver_id from "Operations"."Driver" where lastname = 'Петров' and firstname = 'Петр' and drivers_license_category = 'B, D, DE'),
 	(select number_of_seats FROM "Cars"."Vehicle" where number_plate = 'В123ВВ750RUS')
 	);	
 
@@ -284,7 +313,7 @@ values
 	(select vin from "Cars"."Vehicle" where number_plate = 'В123ВВ750RUS'),
 	'2024-10-16'::date,
 	,
-	(select driver_id from "Operations"."Driver" where lastname = 'Петров' and firstname = 'Петр' and drivers_license_category = 'B'),
+	(select driver_id from "Operations"."Driver" where lastname = 'Петров' and firstname = 'Петр' and drivers_license_category = 'B, D, DE'),
 	(select number_of_seats FROM "Cars"."Vehicle" where number_plate = 'В123ВВ750RUS')
 	);
 
@@ -306,8 +335,446 @@ values
 		where lastname = 'Захаров' and firstname = 'Захар' and passport = '55 66 777888'),
 	6500.00::money,
 	8);
-	
 
+with cte_schedule as
+(
+select schedule_id from "Operations"."Schedule" 
+		where date_depart = '2024-10-16'::date
+		and route_id = (select route_id from "Operations"."Route"
+			where depart = 'Воронеж' and arrive = 'Москва' and distance = 543)
+)
+insert into "Clients"."Ticket"
+	(schedule_id, pass_id, "cost", place_number)
+values 
+	(
+	(select * from cte_schedule),
+	(select pass_id from "Clients"."Passenger"
+		where lastname = 'Захаров' 
+		and firstname = 'Захар'
+		and patronymic = 'Захарович'
+		and passport = '55 66 777888'),
+	6800.00::money,
+	1),
+	(
+	(select * from cte_schedule),
+	(select pass_id from "Clients"."Passenger"
+		where lastname = 'Бойко' 
+		and firstname = 'Алексей'
+		and patronymic = 'Валерьевич'
+		and passport = '33 44 567987'),
+	6800.00::money,
+	5),
+	(
+	(select * from cte_schedule),
+	(select pass_id from "Clients"."Passenger"
+		where lastname = 'Безрукова' 
+		and firstname = 'Елена'
+		and patronymic = 'Владимировна'
+		and passport = '12 43 922716'),
+	6800.00::money,
+	4);
+
+
+--	2.Выполните модификацию записей в таблицах вашей БД, в соответствии с бизнес-требованиями выбранной предметной области
+--Изменение фамилии пассажира
+update "Clients"."Passenger"
+set lastname = 'Иванова'
+where passport = '12 43 922716';
+
+--Продажа билетов на новый рейс Москва - Пермь--
+--Установка флага "Активен" у нового маршрута
+update "Operations"."Route"
+set active = 'yes'
+where route_id = 10;
+
+--Добавление маршрута в расписание рейсов
+insert into "Operations"."Schedule"
+	(route_id, vin, date_depart, time_depart, driver_id, tickets_avaliable)
+values
+	(
+	(select route_id from "Operations"."Route" where depart = 'Москва' and arrive = 'Пермь' and distance = 1154),
+	(select vin from "Cars"."Vehicle" where number_plate = 'МЕ789198RUS'),
+	'2024-10-11'::date,
+	'09:00'::time,
+	(select driver_id from "Operations"."Driver" where lastname = 'Сидоров' and firstname = 'Сидр' and drivers_license_category = 'D'),
+	(select number_of_seats FROM "Cars"."Vehicle" where number_plate = 'МЕ789198RUS')
+	);
+
+--Добавление в БД билетов на рейс
+--Второй такой же пассажир не сможет купить билет из-зи ограничения "ak_cl_ticket"
+
+insert into "Clients"."Ticket"
+	(schedule_id, pass_id, "cost", place_number)
+values 
+	(
+	(select schedule_id from "Operations"."Schedule" 
+		where date_depart = '2024-10-11'::date
+		and route_id = (select route_id from "Operations"."Route"
+			where depart = 'Москва' and arrive = 'Пермь' and distance = 1154)),
+	(select pass_id from "Clients"."Passenger"
+		where lastname = 'Иванова' and firstname = 'Елена' and passport = '12 43 922716'),
+	9850.00::money,
+	19);
+
+insert into "Clients"."Ticket"
+	(schedule_id, pass_id, "cost", place_number)
+values 
+	(
+	(select schedule_id from "Operations"."Schedule" 
+		where date_depart = '2024-10-11'::date
+		and route_id = (select route_id from "Operations"."Route"
+			where depart = 'Москва' and arrive = 'Пермь' and distance = 1154)),
+	(select pass_id from "Clients"."Passenger"
+		where lastname = 'Шубин' and firstname = 'Андрей' and passport = '40 07 097856'),
+	9850.00::money,
+	10);
+
+insert into "Clients"."Ticket"
+	(schedule_id, pass_id, "cost", place_number)
+values 
+	(
+	(select schedule_id from "Operations"."Schedule" 
+		where date_depart = '2024-10-11'::date
+		and route_id = (select route_id from "Operations"."Route"
+			where depart = 'Москва' and arrive = 'Пермь' and distance = 1154)),
+	(select pass_id from "Clients"."Passenger"
+		where lastname = 'Воротыло' and firstname = 'Александр' and passport = '41 07 656243'),
+	9850.00::money,
+	11);
+
+--Удаление билета из БД. Пассажир отказался от поездки
+delete from "Clients"."Ticket"
+where ticked_id = 9;
+
+--Замена автобуса на рейс из-за технических проблем
+insert into "Operations"."Schedule"
+	(schedule_id, route_id, vin, date_depart, time_depart, driver_id, tickets_avaliable)
+overriding system value
+values
+	(4, 
+	(select route_id from "Operations"."Route" where depart = 'Москва' and arrive = 'Пермь' and distance = 1154),
+	(select vin from "Cars"."Vehicle" where number_plate = 'ВХ555198RUS' and model = 'Touring'),
+	'2024-10-11'::date,
+	'09:00'::time,
+	(select driver_id from "Operations"."Driver" where lastname = 'Иванов' and firstname = 'Иван' and drivers_license_category = 'C, CE, D'),
+	(select number_of_seats FROM "Cars"."Vehicle" where number_plate = 'ВХ555198RUS')
+	)
+on conflict (schedule_id)
+do update set 
+	vin = excluded.vin, 
+	route_id = excluded.route_id,
+	date_depart = excluded.date_depart,
+	time_depart = excluded.time_depart,
+	driver_id = excluded.driver_id,
+	tickets_avaliable = excluded.tickets_avaliable;
+
+--3.	Напишите скрипт, для удаления неактуальных записей из таблиц вашей БД
+--Удаление неиспользуемого рейса из расписания
+delete from "Operations"."Schedule"
+where schedule_id = 1;
+
+--Удаление неактуального рейса по истечении "срока давности" хранения
+delete from "Clients"."Ticket"
+where schedule_id = 2;
+
+delete from "Operations"."Schedule"
+where schedule_id = 2;
+
+--Задание 2. Транзакции--
+
+--1.	Создайте в вашей БД следующую таблицу и добавьте в нее записи:
+--Создание таблицы
+   CREATE TABLE public."Goods" (
+      "ProductId" serial NOT NULL,
+      "ProductName" VARCHAR(100) NOT NULL,
+      "Price" MONEY NULL
+   );
+
+--Добавление данных в таблицу
+   INSERT INTO public."Goods"("ProductName", "Price")
+      VALUES ('Велосипед', 7550),
+             ('Перчатки', 230),
+             ('Насос', 150);
+
+--2.	Выполните запрос для проверки наличия в таблице данных записей
+select "ProductId","ProductName","Price"
+from public."Goods";
+
+--3.	Используя явную транзакцию выполните изменение цены продуктов в соответствии со следующей таблицей: 
+--ProductId		Новая цена (Price)
+--		1		Увеличение на 30%
+--		2		Увеличение на 13%
+begin;
+	update public."Goods"
+	set "Price" = (select "Price" from public."Goods" where "ProductId" = 1)/100*130
+	where "ProductId" = 1;
+
+	update public."Goods"
+	set "Price" = (select "Price" from public."Goods" where "ProductId" = 2)/100*113
+	where "ProductId" = 2;
+commit;
+
+--4.	Выполните запрос для проверки наличия в таблице данных записей
+select "ProductId","ProductName","Price"
+from public."Goods";
+
+--5.	Используя явную транзакцию выполните изменение цены продуктов в соответствии со следующей таблицей
+--ProductId		Новая цена (Price)
+--		2		Увеличение на 30%
+--		3		'250 рублей'
+begin;
+	update public."Goods"
+	set "Price" = (select "Price" from public."Goods" where "ProductId" = 2)/100*130
+	where "ProductId" = 2;
+
+	update public."Goods"
+	set "Price" = 250::money
+	where "ProductId" = 3;
+end transaction;
+
+--6.	Выполните запрос для проверки наличия в таблице данных записей
+select "ProductId","ProductName","Price"
+from public."Goods";
+
+--Задание 3. Уровни изоляции транзакций--
+--Задача 1
+	
+--1.	Откройте две параллельные сессии.
+--2.	В первой сессии: 
+--a.	Проверьте, какой уровень изоляции транзакций использует ваше соединение
+select current_setting('transaction_isolation'); --read committed
+
+--b.	Откройте явную транзакцию 
+--c.	Добавьте в рамках транзакции новый товар в таблицу public."Goods". 
+--d.	Узнайте  и зафиксируйте номер текущей транзакции
+begin;
+	insert into public."Goods" ("ProductName", "Price")
+	values ('Колесо', 100);
+	select txid_current(); --номер текущей транзакции - 110877
+--e.	Транзакцию не закрывайте
+
+--3.	Во второй сессии: 
+--a.	Откройте транзакцию с уровнем изоляции READ UNCOMMITTED
+--b.	Убедитесь, что транзакция использует указанный уровень изоляции.
+begin isolation level read uncommitted;
+	select current_setting('transaction_isolation'); --read uncommitted
+	
+--c.	Напишите запрос, извлекающий все записи из таблицы public."Goods" и два служебных столбца – xmin, xmax. 
+select "ProductId", "ProductName", "Price", xmin, xmax from public."Goods";
+--Каков результат?
+ProductId|ProductName|Price    |xmin  |xmax|
+---------+-----------+---------+------+----+
+        1|Велосипед  |$9,815.00|110845|0   |
+        2|Перчатки   |  $336.70|110862|0   |
+        3|Насос      |  $250.00|110862|0   |	
+--4.	В первой сессии: 
+--a.	Зафиксируйте выполнение транзакции
+end transaction;
+--5.	Во второй сессии: 
+--a.	Повторите выполнение запроса 
+select "ProductId", "ProductName", "Price", xmin, xmax from public."Goods";
+--Каков результат?
+ProductId|ProductName|Price    |xmin  |xmax|
+---------+-----------+---------+------+----+
+        1|Велосипед  |$9,815.00|110845|0   |
+        2|Перчатки   |  $336.70|110862|0   |
+        3|Насос      |  $250.00|110862|0   |
+        6|Колесо     |  $100.00|110877|0   |
+--b.	Закройте транзакцию.
+end transaction;
+--6.	Закройте обе сессии
+
+--Задача 2
+--1.	Откройте две параллельные сессии.
+--2.	В первой сессии: 
+--a.	Откройте явную транзакцию 
+--b.	Узнайте и зафиксируйте номер текущей транзакции, выполнив запрос
+--c.	Напишите запрос, извлекающий все записи из таблицы public."Goods". Транзакцию не закрывайте
+begin;
+	select txid_current(); --110880
+	select "ProductId", "ProductName", "Price" from public."Goods";
+ProductId|ProductName|Price    |
+---------+-----------+---------+
+        1|Велосипед  |$9,815.00|
+        2|Перчатки   |  $336.70|
+        3|Насос      |  $250.00|
+        6|Колесо     |  $100.00|
+--3.	Во второй сессии: 
+--a.	Откройте явную транзакцию 
+--b.	Добавьте в рамках транзакции новый товар в таблицу public."Goods". 
+--c.	Узнайте и зафиксируйте номер текущей транзакции, выполнив запрос
+--d.	Зафиксируйте транзакцию.
+begin;
+	insert into ("ProductName", "Price") values ('Цепь 10ск.', 185);
+	select txid_current();  --110883
+end transaction;
+--4.	В первой сессии: 
+--a.	Напишите запрос, извлекающий все записи из таблицы public."Goods". 
+select "ProductId", "ProductName", "Price" from public."Goods";
+--b.	Каков результат?
+ProductId|ProductName|Price    |
+---------+-----------+---------+
+        1|Велосипед  |$9,815.00|
+        2|Перчатки   |  $336.70|
+        3|Насос      |  $250.00|
+        6|Колесо     |  $100.00|
+        7|Цепь 10ск. |  $185.00|
+--c.	Закройте транзакцию
+end transaction;
+--5.	Закройте сессии
+
+
+--Задача 3.
+--1.	Откройте две параллельные сессии.
+--2.	В первой сессии: 
+--a.	Откройте явную транзакцию c уровнем изоляции REPEATABLE READ
+--b.	Напишите запрос, извлекающий из таблицы public."Goods"все записи, удовлетворяющие условию "ProductId">2 
+--c.	Добавьте в рамках транзакции новый товар в таблицу public."Goods". 
+begin isolation level repeatable read;
+	select "ProductId", "ProductName", "Price" from public."Goods" where "ProductId" > 2;
+	insert into public."Goods" ("ProductName", "Price") values ('Камера', 54);
+--Транзакцию не закрывайте!
+--3.	Во второй сессии: 
+--a.	Откройте явную транзакцию 
+--b.	Добавьте в рамках транзакции новый товар в таблицу public."Goods".
+begin;
+	insert into public."Goods" ("ProductName", "Price") values ('Фара', 70);
+--c.	В каком состоянии находится ваша транзакция? 
+	--Транзакция активна. Новый товар добавлен в таблицу.
+--4.	В первой сессии: 
+--a.	Напишите запрос, извлекающий из таблицы public."Goods"все записи, удовлетворяющие условию "ProductId">2 
+select "ProductId", "ProductName", "Price" from public."Goods" where "ProductId" > 2;
+--b.	Каков результат?
+ProductId|ProductName|Price  |
+---------+-----------+-------+
+        3|Насос      |$250.00|
+        6|Колесо     |$100.00|
+        7|Цепь 10ск. |$185.00|
+        8|Камера     | $54.00|
+--5.	Во второй сессии: 
+--a.	Напишите запрос, извлекающий из таблицы public."Goods"все записи, удовлетворяющие условию "ProductId">2 
+ProductId|ProductName|Price  |
+---------+-----------+-------+
+        3|Насос      |$250.00|
+        6|Колесо     |$100.00|
+        7|Цепь 10ск. |$185.00|
+        9|Фара       | $70.00|
+--b.	Каково состояние вашей транзакции?
+    --Транзакция активна.
+--6.	Откатите открытые транзакции 
+-- Первая сессия
+rollback; 
+ProductId|ProductName|Price  |
+---------+-----------+-------+
+        3|Насос      |$250.00|
+        6|Колесо     |$100.00|
+        7|Цепь 10ск. |$185.00|
+-- Вторая сессия
+rollback; 
+ProductId|ProductName|Price  |
+---------+-----------+-------+
+        3|Насос      |$250.00|
+        6|Колесо     |$100.00|
+        7|Цепь 10ск. |$185.00|
+
+        
+--Задача 4.
+--1.	Откройте две параллельные сессии.
+--2.	В первой сессии: 
+--a.	Откройте явную транзакцию c уровнем изоляции REPEATABLE READ
+--b.	Напишите запрос, извлекающий из таблицы public."Goods"все записи, удовлетворяющие условию "ProductId">2
+begin isolation level repeatable read;
+	select "ProductId", "ProductName", "Price" from public."Goods" where "ProductId" > 2;
+ProductId|ProductName|Price  |
+---------+-----------+-------+
+        3|Насос      |$250.00|
+        6|Колесо     |$100.00|
+        7|Цепь 10ск. |$185.00|
+--3.	Во второй сессии: 
+--a.	Откройте явную транзакцию 
+--b.	Напишите запрос, извлекающий из таблицы public."Goods"все записи, удовлетворяющие условию "ProductId">2
+begin isolation level repeatable read;
+	select "ProductId", "ProductName", "Price" from public."Goods" where "ProductId" > 2;
+ProductId|ProductName|Price  |
+---------+-----------+-------+
+        3|Насос      |$250.00|
+        6|Колесо     |$100.00|
+        7|Цепь 10ск. |$185.00|
+--c.	Измените стоимость товара с кодом 3 в два раза
+	update public."Goods" 
+	set "Price" = (select "Price" from public."Goods" where "ProductId" = 3)*3 
+	where "ProductId" = 3;
+--d.	В каком состоянии находится ваша транзакция?
+	-- Транзакция активна. Выполнилось изменение стоимости товара.
+ProductId|ProductName|Price  |
+---------+-----------+-------+
+        6|Колесо     |$100.00|
+        7|Цепь 10ск. |$185.00|
+        3|Насос      |$750.00|
+--4.	В первой сессии: 
+--a.	Измените наименование товара с кодом 3, добавив к нему ‘silver’ 
+    update public."Goods" 
+    set "ProductName" = (select "ProductName" from public."Goods" where "ProductId" = 3) || 'silver' 
+   	where "ProductId" = 3;
+--b.	Каков результат?
+	-- Запрос не выполняется ("Read data from container....")   
+--5.	Во второй сессии: 
+--a.	Напишите запрос, извлекающий из таблицы public."Goods"все записи, удовлетворяющие условию "ProductId">2 
+	select "ProductId", "ProductName", "Price" from public."Goods" where "ProductId" > 2;   
+ProductId|ProductName|Price  |
+---------+-----------+-------+
+        6|Колесо     |$100.00|
+        7|Цепь 10ск. |$185.00|
+        3|Насос      |$750.00|   
+--b.	Зафиксируйте транзакцию
+end transaction;       
+--6.	В первой сессии: 
+--a.	Каково состояние вашей транзакции?
+	-- Запрос завершился с ошибкой: ("SQL Error [40001]: ERROR: could not serialize access due to concurrent update")
+--7.	Откатите открытые транзакции и удалите вашу БД!
+	-- Первая сессия:
+rollback;
+	select "ProductId", "ProductName", "Price" from public."Goods" where "ProductId" > 2;
+ProductId|ProductName|Price  |
+---------+-----------+-------+
+        6|Колесо     |$100.00|
+        7|Цепь 10ск. |$185.00|
+        3|Насос      |$750.00| -- <- Цена изменилась
+
+
+-- Удаление БД DevDB2024_SERPIS:
+select * from pg_stat_activity where datname = 'DevDB2024_SERPIS';
+select pg_terminate_backend(5260) from pg_stat_activity where datname = 'DevDB2024_SERPIS';	
+select pg_terminate_backend(2844) from pg_stat_activity where datname = 'DevDB2024_SERPIS';	
+drop database "DevDB2024_SERPIS";
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
